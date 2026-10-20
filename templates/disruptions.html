@@ -1,0 +1,751 @@
+{% extends "base.html" %}
+
+{% block title %}
+Disruptions | Placement Week Scheduler
+{% endblock %}
+
+{% block content %}
+
+<div class="page-header">
+
+    <h1>Disruption Management</h1>
+
+    <p>
+        Simulate real placement-week problems and automatically
+        replan the schedule.
+    </p>
+
+</div>
+
+
+<div class="disruption-card">
+
+    <h2>Simulate Disruption</h2>
+
+
+    <!-- DISRUPTION TYPE -->
+
+    <div class="form-group">
+
+        <label for="disruptionType">
+            Disruption Type
+        </label>
+
+        <select id="disruptionType">
+
+            <option value="">
+                Select disruption
+            </option>
+
+            <option value="company_late">
+                Company Late Arrival
+            </option>
+
+            <option value="panel_dropped">
+                Panel Dropped
+            </option>
+
+            <option value="student_withdrawal">
+                Student Withdrawal
+            </option>
+
+            <option value="room_unavailable">
+                Room Unavailable
+            </option>
+
+        </select>
+
+    </div>
+
+
+    <!-- COMPANY -->
+
+    <div
+        class="form-group"
+        id="companyGroup"
+    >
+
+        <label for="company">
+            Company
+        </label>
+
+        <select id="company">
+
+            <option value="">
+                Select company
+            </option>
+
+            {% for company in companies %}
+
+            <option value="{{ company.id }}">
+                {{ company.name }}
+            </option>
+
+            {% endfor %}
+
+        </select>
+
+    </div>
+
+
+    <!-- ARRIVAL TIME -->
+
+    <div
+        class="form-group"
+        id="arrivalGroup"
+    >
+
+        <label for="newArrivalTime">
+            New Arrival Time
+        </label>
+
+        <input
+            type="time"
+            id="newArrivalTime"
+            value="11:00"
+        >
+
+    </div>
+
+
+    <!-- PANEL -->
+
+    <div
+        class="form-group"
+        id="panelGroup"
+    >
+
+        <label for="panel">
+            Panel
+        </label>
+
+        <select id="panel">
+
+            <option value="">
+                Select panel
+            </option>
+
+            {% for company in companies %}
+
+                {% for panel_number in range(1, company.panel_count + 1) %}
+
+                <option
+                    value="{{ company.id }}:{{ panel_number }}"
+                    data-company-id="{{ company.id }}"
+                    data-panel-id="{{ panel_number }}"
+                >
+                    {{ company.name }} - Panel {{ panel_number }}
+                </option>
+
+                {% endfor %}
+
+            {% endfor %}
+
+        </select>
+
+    </div>
+
+
+    <!-- STUDENT -->
+
+    <div
+        class="form-group"
+        id="studentGroup"
+    >
+
+        <label for="student">
+            Student
+        </label>
+
+        <select id="student">
+
+            <option value="">
+                Select student
+            </option>
+
+            {% for student in students %}
+
+            <option value="{{ student.id }}">
+                {{ student.student_code }} -
+                {{ student.name }}
+            </option>
+
+            {% endfor %}
+
+        </select>
+
+    </div>
+
+
+    <!-- ROOM -->
+
+    <div
+        class="form-group"
+        id="roomGroup"
+    >
+
+        <label for="room">
+            Room
+        </label>
+
+        <select id="room">
+
+            <option value="">
+                Select room
+            </option>
+
+            {% for room in rooms %}
+
+            <option value="{{ room.id }}">
+                {{ room.name }}
+            </option>
+
+            {% endfor %}
+
+        </select>
+
+    </div>
+
+
+    <!-- BUTTON -->
+
+    <button
+        type="button"
+        class="button primary"
+        id="replanButton"
+    >
+        Replan Schedule
+    </button>
+
+
+    <!-- RESULT -->
+
+    <div
+        id="replanResult"
+        class="replan-result"
+    ></div>
+
+</div>
+
+
+<script>
+
+/* ============================================================
+   SHOW / HIDE FIELDS
+============================================================ */
+
+function updateFields() {
+
+    const type =
+        document.getElementById("disruptionType").value;
+
+
+    document.getElementById(
+        "companyGroup"
+    ).style.display = "none";
+
+
+    document.getElementById(
+        "arrivalGroup"
+    ).style.display = "none";
+
+
+    document.getElementById(
+        "panelGroup"
+    ).style.display = "none";
+
+
+    document.getElementById(
+        "studentGroup"
+    ).style.display = "none";
+
+
+    document.getElementById(
+        "roomGroup"
+    ).style.display = "none";
+
+
+    if (type === "company_late") {
+
+        document.getElementById(
+            "companyGroup"
+        ).style.display = "block";
+
+        document.getElementById(
+            "arrivalGroup"
+        ).style.display = "block";
+    }
+
+
+    if (type === "panel_dropped") {
+
+        document.getElementById(
+            "panelGroup"
+        ).style.display = "block";
+    }
+
+
+    if (type === "student_withdrawal") {
+
+        document.getElementById(
+            "studentGroup"
+        ).style.display = "block";
+    }
+
+
+    if (type === "room_unavailable") {
+
+        document.getElementById(
+            "roomGroup"
+        ).style.display = "block";
+    }
+
+}
+
+
+/* ============================================================
+   DISRUPTION TYPE CHANGE
+============================================================ */
+
+document.getElementById(
+    "disruptionType"
+).addEventListener(
+    "change",
+    updateFields
+);
+
+
+/* ============================================================
+   INITIAL STATE
+============================================================ */
+
+updateFields();
+
+
+/* ============================================================
+   REPLAN
+============================================================ */
+
+document.getElementById(
+    "replanButton"
+).addEventListener(
+    "click",
+    runReplan
+);
+
+
+function runReplan() {
+
+    const disruptionType =
+        document.getElementById(
+            "disruptionType"
+        ).value;
+
+
+    const companyValue =
+        document.getElementById(
+            "company"
+        ).value;
+
+
+    const studentValue =
+        document.getElementById(
+            "student"
+        ).value;
+
+
+    const roomValue =
+        document.getElementById(
+            "room"
+        ).value;
+
+
+    const arrivalTime =
+        document.getElementById(
+            "newArrivalTime"
+        ).value;
+
+
+    /* ========================================================
+       PANEL
+    ======================================================== */
+
+    const panelElement =
+        document.getElementById("panel");
+
+
+    let panelValue = "";
+
+
+    let panelCompanyId = "";
+
+
+    let panelId = "";
+
+
+    if (panelElement) {
+
+        const selectedOption =
+            panelElement.options[
+                panelElement.selectedIndex
+            ];
+
+
+        if (
+            selectedOption &&
+            selectedOption.value !== ""
+        ) {
+
+            panelValue =
+                selectedOption.value;
+
+
+            panelCompanyId =
+                selectedOption.getAttribute(
+                    "data-company-id"
+                );
+
+
+            panelId =
+                selectedOption.getAttribute(
+                    "data-panel-id"
+                );
+
+        }
+
+    }
+
+
+    console.log(
+        "Disruption:",
+        disruptionType
+    );
+
+
+    console.log(
+        "Panel value:",
+        panelValue
+    );
+
+
+    console.log(
+        "Panel company:",
+        panelCompanyId
+    );
+
+
+    console.log(
+        "Panel ID:",
+        panelId
+    );
+
+
+    /* ========================================================
+       VALIDATION
+    ======================================================== */
+
+    if (disruptionType === "") {
+
+        document.getElementById(
+            "replanResult"
+        ).innerHTML =
+            "<p>Please select a disruption.</p>";
+
+        return;
+    }
+
+
+    if (
+        disruptionType === "company_late" &&
+        companyValue === ""
+    ) {
+
+        document.getElementById(
+            "replanResult"
+        ).innerHTML =
+            "<p>Please select a company.</p>";
+
+        return;
+    }
+
+
+    if (
+        disruptionType === "panel_dropped" &&
+        panelId === ""
+    ) {
+
+        document.getElementById(
+            "replanResult"
+        ).innerHTML =
+            "<p>Please select a panel.</p>";
+
+        return;
+    }
+
+
+    if (
+        disruptionType === "student_withdrawal" &&
+        studentValue === ""
+    ) {
+
+        document.getElementById(
+            "replanResult"
+        ).innerHTML =
+            "<p>Please select a student.</p>";
+
+        return;
+    }
+
+
+    if (
+        disruptionType === "room_unavailable" &&
+        roomValue === ""
+    ) {
+
+        document.getElementById(
+            "replanResult"
+        ).innerHTML =
+            "<p>Please select a room.</p>";
+
+        return;
+    }
+
+
+    /* ========================================================
+       COMPANY ID
+    ======================================================== */
+
+    let companyId = companyValue;
+
+
+    if (
+        disruptionType === "panel_dropped"
+    ) {
+
+        companyId =
+            panelCompanyId;
+    }
+
+
+    /* ========================================================
+       DATA
+    ======================================================== */
+
+    const data = {
+
+        disruption_type:
+            disruptionType,
+
+        company_id:
+            companyId,
+
+        panel_id:
+            panelId,
+
+        student_id:
+            studentValue,
+
+        room_id:
+            roomValue,
+
+        new_arrival_time:
+            arrivalTime
+    };
+
+
+    console.log(
+        "DATA SENT:",
+        data
+    );
+
+
+    /* ========================================================
+       SHOW LOADING
+    ======================================================== */
+
+    document.getElementById(
+        "replanResult"
+    ).innerHTML =
+        "<p>Replanning schedule...</p>";
+
+
+    /* ========================================================
+       SEND TO FLASK
+    ======================================================== */
+
+    fetch(
+        "/api/replan",
+        {
+
+            method: "POST",
+
+            headers: {
+                "Content-Type":
+                    "application/json"
+            },
+
+            body:
+                JSON.stringify(data)
+
+        }
+    )
+
+    .then(
+        function(response) {
+
+            return response.json();
+
+        }
+    )
+
+    .then(
+        function(result) {
+
+            let html = "";
+
+
+            /* =================================================
+               ERROR
+            ================================================= */
+
+            if (!result.success) {
+
+                html +=
+                    "<h3>Error</h3>";
+
+                html +=
+                    "<p>" +
+                    result.message +
+                    "</p>";
+
+
+                document.getElementById(
+                    "replanResult"
+                ).innerHTML =
+                    html;
+
+                return;
+            }
+
+
+            /* =================================================
+               SUCCESS
+            ================================================= */
+
+            html +=
+                "<h3>Replan Successful</h3>";
+
+
+            html +=
+                "<p>" +
+                result.message +
+                "</p>";
+
+
+            html +=
+                "<p><strong>" +
+                "Affected interviews: " +
+                result.affected_count +
+                "</strong></p>";
+
+
+            html +=
+                "<h3>Change Summary</h3>";
+
+
+            result.changes.forEach(
+                function(change) {
+
+                    html +=
+                        "<div class='change-card'>";
+
+
+                    html +=
+                        "<strong>" +
+                        change.type +
+                        "</strong><br>";
+
+
+                    html +=
+                        "Student: " +
+                        change.student +
+                        "<br>";
+
+
+                    html +=
+                        "Company: " +
+                        change.company +
+                        "<br>";
+
+
+                    html +=
+                        "Old: Day " +
+                        change.old_day +
+                        " | " +
+                        change.old_time +
+                        "<br>";
+
+
+                    html +=
+                        "New: Day " +
+                        change.new_day +
+                        " | " +
+                        change.new_time +
+                        "<br>";
+
+
+                    html +=
+                        "Room: " +
+                        change.new_room +
+                        "<br>";
+
+
+                    html +=
+                        "Panel: " +
+                        change.new_panel;
+
+
+                    html +=
+                        "</div><br>";
+
+                }
+            );
+
+
+            html +=
+                "<a href='/schedule'>" +
+                "<button type='button'>" +
+                "View Updated Schedule" +
+                "</button>" +
+                "</a>";
+
+
+            document.getElementById(
+                "replanResult"
+            ).innerHTML =
+                html;
+
+        }
+    )
+
+    .catch(
+        function(error) {
+
+            document.getElementById(
+                "replanResult"
+            ).innerHTML =
+
+                "<h3>Error</h3>" +
+
+                "<p>" +
+                error +
+                "</p>";
+
+        }
+    );
+
+}
+
+</script>
+
+{% endblock %}

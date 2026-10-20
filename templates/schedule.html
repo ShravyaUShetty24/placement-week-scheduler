@@ -1,0 +1,631 @@
+{% extends "base.html" %}
+
+{% block title %}Schedule | Placement Week Scheduler{% endblock %}
+
+{% block content %}
+
+<div class="page-header">
+    <h1>Interview Schedule</h1>
+    <p>Placement week interview schedule</p>
+</div>
+
+
+<!-- Summary -->
+<div class="summary-card">
+
+    <div>
+        <span class="summary-label">Scheduled Interviews</span>
+        <strong id="scheduledCount">{{ interviews|length }}</strong>
+    </div>
+
+    <div>
+        <span class="summary-label">Showing</span>
+        <strong id="visibleCount">{{ interviews|length }}</strong>
+    </div>
+
+</div>
+
+
+<!-- Filters -->
+<div class="filter-card">
+
+    <h2>Schedule Filters</h2>
+
+    <div class="filter-grid">
+
+        <!-- Day -->
+        <div class="filter-group">
+
+            <label for="dayFilter">
+                Day
+            </label>
+
+            <select id="dayFilter">
+                <option value="all">All Days</option>
+                <option value="1">Day 1</option>
+                <option value="2">Day 2</option>
+                <option value="3">Day 3</option>
+                <option value="4">Day 4</option>
+            </select>
+
+        </div>
+
+
+        <!-- Company -->
+        <div class="filter-group">
+
+            <label for="companyFilter">
+                Company
+            </label>
+
+            <select id="companyFilter">
+
+                <option value="all">
+                    All Companies
+                </option>
+
+                {% set companies = [] %}
+
+                {% for interview in interviews %}
+
+                    {% if interview.company_name not in companies %}
+
+                        {% set _ = companies.append(interview.company_name) %}
+
+                    {% endif %}
+
+                {% endfor %}
+
+                {% for company in companies|sort %}
+
+                    <option value="{{ company }}">
+                        {{ company }}
+                    </option>
+
+                {% endfor %}
+
+            </select>
+
+        </div>
+
+
+        <!-- Room -->
+        <div class="filter-group">
+
+            <label for="roomFilter">
+                Room
+            </label>
+
+            <select id="roomFilter">
+
+                <option value="all">
+                    All Rooms
+                </option>
+
+                {% set rooms = [] %}
+
+                {% for interview in interviews %}
+
+                    {% if interview.room_name not in rooms %}
+
+                        {% set _ = rooms.append(interview.room_name) %}
+
+                    {% endif %}
+
+                {% endfor %}
+
+                <!--
+                    Display rooms numerically instead of alphabetically.
+                    This prevents:
+                    Room 1
+                    Room 10
+                    Room 11
+                    Room 2
+
+                    and displays:
+                    Room 1
+                    Room 2
+                    Room 3
+                    ...
+                    Room 20
+                -->
+
+                {% for room_number in range(1, 21) %}
+
+                    {% set room_name = "Room " ~ room_number %}
+
+                    {% if room_name in rooms %}
+
+                        <option value="{{ room_name }}">
+                            {{ room_name }}
+                        </option>
+
+                    {% endif %}
+
+                {% endfor %}
+
+            </select>
+
+        </div>
+
+
+        <!-- Search -->
+        <div class="filter-group search-group">
+
+            <label for="searchFilter">
+                Search
+            </label>
+
+            <input
+                type="text"
+                id="searchFilter"
+                placeholder="Search student or company..."
+            >
+
+        </div>
+
+    </div>
+
+
+    <!-- Clear -->
+    <button
+        type="button"
+        id="clearFilters"
+        class="clear-button"
+    >
+        Clear Filters
+    </button>
+
+</div>
+
+
+<!-- Schedule -->
+<div class="schedule-container">
+
+    {% for day in range(1, 5) %}
+
+        {% set day_interviews = [] %}
+
+        {% for interview in interviews %}
+
+            {% if interview.day == day %}
+
+                {% set _ = day_interviews.append(interview) %}
+
+            {% endif %}
+
+        {% endfor %}
+
+
+        <div
+            class="day-section"
+            data-day-section="{{ day }}"
+        >
+
+            <div class="day-heading">
+
+                <h2>
+                    Day {{ day }}
+                </h2>
+
+                <span class="day-count">
+                    {{ day_interviews|length }} interviews
+                </span>
+
+            </div>
+
+
+            <div class="table-wrapper">
+
+                <table>
+
+                    <thead>
+
+                        <tr>
+
+                            <th>Time</th>
+                            <th>Room</th>
+                            <th>Company</th>
+                            <th>Student</th>
+                            <th>CGPA</th>
+                            <th>Branch</th>
+                            <th>Panel</th>
+                            <th>Priority</th>
+
+                        </tr>
+
+                    </thead>
+
+
+                    <tbody>
+
+                    {% for interview in day_interviews %}
+
+                        <tr
+                            class="schedule-row"
+                            data-day="{{ interview.day }}"
+                            data-company="{{ interview.company_name }}"
+                            data-room="{{ interview.room_name }}"
+                            data-search="{{ interview.company_name }} {{ interview.student_name }} {{ interview.student_code }}"
+                        >
+
+                            <!-- TIME -->
+                            <td>
+
+                                <strong
+                                    class="interview-time"
+                                    data-start="{{ interview.start_time }}"
+                                    data-end="{{ interview.end_time }}"
+                                >
+                                    {{ interview.start_time }} - {{ interview.end_time }}
+                                </strong>
+
+                            </td>
+
+
+                            <!-- ROOM -->
+                            <td>
+                                {{ interview.room_name }}
+                            </td>
+
+
+                            <!-- COMPANY -->
+                            <td>
+                                {{ interview.company_name }}
+                            </td>
+
+
+                            <!-- STUDENT -->
+                            <td>
+                                {{ interview.student_code }}
+                                -
+                                {{ interview.student_name }}
+                            </td>
+
+
+                            <!-- CGPA -->
+                            <td>
+                                {{ "%.2f"|format(interview.cgpa) }}
+                            </td>
+
+
+                            <!-- BRANCH -->
+                            <td>
+                                {{ interview.branch }}
+                            </td>
+
+
+                            <!-- PANEL -->
+                            <td>
+                                P{{ interview.panel_id }}
+                            </td>
+
+
+                            <!-- PRIORITY -->
+                            <td>
+
+                                {% if interview.priority == "HIGH" %}
+
+                                    <span class="priority high">
+                                        HIGH
+                                    </span>
+
+                                {% elif interview.priority == "MEDIUM" %}
+
+                                    <span class="priority medium">
+                                        MEDIUM
+                                    </span>
+
+                                {% else %}
+
+                                    <span class="priority low">
+                                        LOW
+                                    </span>
+
+                                {% endif %}
+
+                            </td>
+
+                        </tr>
+
+                    {% endfor %}
+
+
+                    <!-- NO RESULTS -->
+                    <tr
+                        class="no-results-row"
+                        style="display:none;"
+                    >
+
+                        <td colspan="8">
+
+                            No interviews match the selected filters.
+
+                        </td>
+
+                    </tr>
+
+
+                    </tbody>
+
+                </table>
+
+            </div>
+
+        </div>
+
+    {% endfor %}
+
+</div>
+
+
+<script>
+
+document.addEventListener("DOMContentLoaded", function () {
+
+
+    /* =====================================================
+       12-HOUR TIME FORMAT
+
+       Example:
+       09:00 -> 09:00 AM
+       13:00 -> 01:00 PM
+       ===================================================== */
+
+    function formatTime(time) {
+
+        if (!time) {
+            return "";
+        }
+
+        const parts = time.split(":");
+
+        let hour = parseInt(parts[0], 10);
+        const minute = parts[1];
+
+        const period = hour >= 12 ? "PM" : "AM";
+
+        if (hour === 0) {
+            hour = 12;
+        }
+        else if (hour > 12) {
+            hour = hour - 12;
+        }
+
+        return (
+            String(hour).padStart(2, "0")
+            + ":"
+            + minute
+            + " "
+            + period
+        );
+    }
+
+
+    /* Convert every interview time */
+
+    document.querySelectorAll(".interview-time").forEach(function (element) {
+
+        const start = element.dataset.start;
+        const end = element.dataset.end;
+
+        element.textContent =
+            formatTime(start)
+            + " - "
+            + formatTime(end);
+
+    });
+
+
+    /* =====================================================
+       FILTER ELEMENTS
+       ===================================================== */
+
+    const dayFilter =
+        document.getElementById("dayFilter");
+
+    const companyFilter =
+        document.getElementById("companyFilter");
+
+    const roomFilter =
+        document.getElementById("roomFilter");
+
+    const searchFilter =
+        document.getElementById("searchFilter");
+
+    const clearFilters =
+        document.getElementById("clearFilters");
+
+    const rows =
+        document.querySelectorAll(".schedule-row");
+
+    const daySections =
+        document.querySelectorAll(".day-section");
+
+    const visibleCount =
+        document.getElementById("visibleCount");
+
+
+    /* =====================================================
+       APPLY FILTERS
+       ===================================================== */
+
+    function applyFilters() {
+
+        const selectedDay =
+            dayFilter.value;
+
+        const selectedCompany =
+            companyFilter.value;
+
+        const selectedRoom =
+            roomFilter.value;
+
+        const searchText =
+            searchFilter.value
+                .toLowerCase()
+                .trim();
+
+
+        let count = 0;
+
+
+        rows.forEach(function (row) {
+
+            const rowDay =
+                row.dataset.day;
+
+            const rowCompany =
+                row.dataset.company;
+
+            const rowRoom =
+                row.dataset.room;
+
+            const rowSearch =
+                row.dataset.search.toLowerCase();
+
+
+            const dayMatch =
+                selectedDay === "all" ||
+                rowDay === selectedDay;
+
+
+            const companyMatch =
+                selectedCompany === "all" ||
+                rowCompany === selectedCompany;
+
+
+            const roomMatch =
+                selectedRoom === "all" ||
+                rowRoom === selectedRoom;
+
+
+            const searchMatch =
+                searchText === "" ||
+                rowSearch.includes(searchText);
+
+
+            if (
+                dayMatch &&
+                companyMatch &&
+                roomMatch &&
+                searchMatch
+            ) {
+
+                row.style.display = "";
+
+                count++;
+
+            }
+            else {
+
+                row.style.display = "none";
+
+            }
+
+        });
+
+
+        /* =================================================
+           SHOW / HIDE DAY SECTIONS
+           ================================================= */
+
+        daySections.forEach(function (section) {
+
+            const sectionRows =
+                section.querySelectorAll(".schedule-row");
+
+            const noResults =
+                section.querySelector(".no-results-row");
+
+
+            let visibleRows = 0;
+
+
+            sectionRows.forEach(function (row) {
+
+                if (row.style.display !== "none") {
+
+                    visibleRows++;
+
+                }
+
+            });
+
+
+            if (visibleRows === 0) {
+
+                noResults.style.display = "";
+
+            }
+            else {
+
+                noResults.style.display = "none";
+
+            }
+
+        });
+
+
+        /* Update visible count */
+
+        visibleCount.textContent = count;
+
+    }
+
+
+    /* =====================================================
+       FILTER EVENTS
+       ===================================================== */
+
+    dayFilter.addEventListener(
+        "change",
+        applyFilters
+    );
+
+
+    companyFilter.addEventListener(
+        "change",
+        applyFilters
+    );
+
+
+    roomFilter.addEventListener(
+        "change",
+        applyFilters
+    );
+
+
+    searchFilter.addEventListener(
+        "input",
+        applyFilters
+    );
+
+
+    /* =====================================================
+       CLEAR FILTERS
+       ===================================================== */
+
+    clearFilters.addEventListener(
+        "click",
+        function () {
+
+            dayFilter.value = "all";
+
+            companyFilter.value = "all";
+
+            roomFilter.value = "all";
+
+            searchFilter.value = "";
+
+            applyFilters();
+
+        }
+    );
+
+
+});
+
+</script>
+
+{% endblock %}

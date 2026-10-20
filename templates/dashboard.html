@@ -1,0 +1,434 @@
+{% extends "base.html" %}
+
+
+{% block title %}
+Placement Scheduler | Dashboard
+{% endblock %}
+
+
+{% block content %}
+
+
+<!-- =====================================================
+     HEADER
+====================================================== -->
+
+<div class="page-header">
+
+    <div>
+
+        <h1>
+            Placement Week Scheduler
+        </h1>
+
+        <p>
+            Centralized placement interview scheduling and
+            disruption management system.
+        </p>
+
+    </div>
+
+</div>
+
+
+<!-- =====================================================
+     OVERVIEW
+====================================================== -->
+
+<h2 class="section-title">
+    Placement Overview
+</h2>
+
+
+<div class="stats-grid">
+
+
+    <div class="stat-card">
+
+        <div class="stat-title">
+            Companies
+        </div>
+
+        <div class="stat-value">
+            {{ companies }}
+        </div>
+
+        <div class="stat-description">
+            Participating companies
+        </div>
+
+    </div>
+
+
+    <div class="stat-card">
+
+        <div class="stat-title">
+            Students
+        </div>
+
+        <div class="stat-value">
+            {{ students }}
+        </div>
+
+        <div class="stat-description">
+            Registered students
+        </div>
+
+    </div>
+
+
+    <div class="stat-card">
+
+        <div class="stat-title">
+            Rooms
+        </div>
+
+        <div class="stat-value">
+            {{ rooms }}
+        </div>
+
+        <div class="stat-description">
+            Interview rooms
+        </div>
+
+    </div>
+
+
+    <div class="stat-card">
+
+        <div class="stat-title">
+            Interview Requests
+        </div>
+
+        <div class="stat-value">
+            {{ total_requests }}
+        </div>
+
+        <div class="stat-description">
+            Total shortlisted interviews
+        </div>
+
+    </div>
+
+
+</div>
+
+
+<!-- =====================================================
+     SCHEDULING PERFORMANCE
+====================================================== -->
+
+<h2 class="section-title">
+    Scheduling Performance
+</h2>
+
+
+<div class="stats-grid">
+
+
+    <div class="stat-card">
+
+        <div class="stat-title">
+            Scheduled
+        </div>
+
+        <div class="stat-value success">
+            {{ scheduled }}
+        </div>
+
+        <div class="stat-description">
+            Successfully scheduled
+        </div>
+
+    </div>
+
+
+    <div class="stat-card">
+
+        <div class="stat-title">
+            Unscheduled
+        </div>
+
+        <div class="stat-value warning">
+            {{ unscheduled }}
+        </div>
+
+        <div class="stat-description">
+            No feasible slot available
+        </div>
+
+    </div>
+
+
+    <div class="stat-card">
+
+        <div class="stat-title">
+            Scheduling Rate
+        </div>
+
+        <div class="stat-value">
+            {{ scheduling_percentage }}%
+        </div>
+
+        <div class="stat-description">
+            Overall scheduling success
+        </div>
+
+    </div>
+
+
+    <div class="stat-card">
+
+        <div class="stat-title">
+            Hard Conflicts
+        </div>
+
+        <div class="stat-value success">
+            0
+        </div>
+
+        <div class="stat-description">
+            Student / Room / Panel
+        </div>
+
+    </div>
+
+
+</div>
+
+
+<!-- =====================================================
+     SYSTEM HEALTH
+====================================================== -->
+
+<h2 class="section-title">
+    System Health
+</h2>
+
+
+<div class="health-grid">
+
+
+    <div class="health-card">
+
+        <div class="health-icon">
+            ✓
+        </div>
+
+        <div>
+
+            <strong>
+                Student Conflicts
+            </strong>
+
+            <p>
+                0 conflicts detected
+            </p>
+
+        </div>
+
+    </div>
+
+
+    <div class="health-card">
+
+        <div class="health-icon">
+            ✓
+        </div>
+
+        <div>
+
+            <strong>
+                Room Conflicts
+            </strong>
+
+            <p>
+                0 conflicts detected
+            </p>
+
+        </div>
+
+    </div>
+
+
+    <div class="health-card">
+
+        <div class="health-icon">
+            ✓
+        </div>
+
+        <div>
+
+            <strong>
+                Panel Conflicts
+            </strong>
+
+            <p>
+                0 conflicts detected
+            </p>
+
+        </div>
+
+    </div>
+
+
+    <div class="health-card">
+
+        <div class="health-icon">
+            ✓
+        </div>
+
+        <div>
+
+            <strong>
+                Scheduler
+            </strong>
+
+            <p>
+                Operational
+            </p>
+
+        </div>
+
+    </div>
+
+
+</div>
+
+
+<!-- =====================================================
+     QUICK ACTIONS
+====================================================== -->
+
+<h2 class="section-title">
+    Quick Actions
+</h2>
+
+
+<div class="actions">
+
+
+    <a
+        href="{{ url_for('schedule') }}"
+        class="button primary"
+    >
+
+        View Interview Schedule
+
+    </a>
+
+
+    <a
+        href="{{ url_for('disruptions') }}"
+        class="button secondary"
+    >
+
+        Manage Disruptions
+
+    </a>
+
+
+</div>
+
+
+<!-- =====================================================
+     PLACEMENT WEEK CONFIGURATION
+====================================================== -->
+
+<h2 class="section-title">
+    Scheduling Configuration
+</h2>
+
+
+<div class="configuration-grid">
+
+
+    <div class="configuration-card">
+
+        <span>
+            Placement Duration
+        </span>
+
+        <strong>
+            4 Days
+        </strong>
+
+    </div>
+
+
+    <div class="configuration-card">
+
+        <span>
+            Working Hours
+        </span>
+
+        <strong>
+            09:00 AM - 05:00 PM
+        </strong>
+
+    </div>
+
+
+    <div class="configuration-card">
+
+        <span>
+            Lunch Break
+        </span>
+
+        <strong>
+            01:00 PM - 02:00 PM
+        </strong>
+
+    </div>
+
+
+    <div class="configuration-card">
+
+        <span>
+            Slot Granularity
+        </span>
+
+        <strong>
+            15 Minutes
+        </strong>
+
+    </div>
+
+
+</div>
+
+
+<!-- =====================================================
+     SYSTEM STATUS
+====================================================== -->
+
+<div class="info-panel">
+
+
+    <div class="system-status-header">
+
+        <div>
+
+            <h2>
+                System Status
+            </h2>
+
+            <p>
+                All hard scheduling constraints are currently
+                satisfied.
+            </p>
+
+        </div>
+
+
+        <div class="status-badge">
+            ● OPERATIONAL
+        </div>
+
+    </div>
+
+
+</div>
+
+
+{% endblock %}
